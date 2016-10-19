@@ -6,7 +6,7 @@ require(ISLR)
 library(class)
 require(class)
 require(boot)
-movies = read.csv("movies.csv", na.strings = "?")
+movies = read.csv("./movies.csv", na.strings = "?")
 movies = na.omit(movies)
 attach(movies)
 totalrows = dim(movies)[1]
@@ -121,3 +121,7 @@ mean(lda.predict5$class != moviesTest$imdb_rating)
 # We can clearly see from LDA models that model 4 which we have used in Multiple Linear Regression model performed well on testing data set as it provided 27% test error rate while model 5 provided 28% test error rate
 
 # Using the KNN model now with only those predictors which are highly associated with the target variable; We are using the predictors of glm.fit4 and glm.fit5 models from the very earlier stage
+predictors=cbind(num_critic_for_reviews,director_facebook_likes,gross,num_voted_users,facenumber_in_poster,num_user_for_reviews)
+knn.pred1 = knn(predictors[train,],predictors[!train,],imdb_rating[train],k=10)
+table(knn.pred1,imdb_rating[!train])
+mean(knn.pred1==imdb_rating[!train])
