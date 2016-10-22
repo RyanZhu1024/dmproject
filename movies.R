@@ -61,18 +61,23 @@ plot(color, imdb_score)                     # Impacting not at all
 plot(director_name, imdb_score)             # Impacting not at all
 
 # We are trying with Multiple Linear Regression Model based on the above plots for determination of predictors to come up with the predicted imdb score
-
+par(mfrow=c(2,2))
 dim(moviesdataset)
 glm.fit1 = lm(imdb_score~num_critic_for_reviews + actor_1_facebook_likes + actor_2_facebook_likes + director_facebook_likes + gross + num_voted_users + facenumber_in_poster + num_user_for_reviews + country + movie_facebook_likes, data=moviesTrain)
 summary(glm.fit1)
+plot(glm.fit1)
 glm.fit2 = lm(imdb_score~num_critic_for_reviews + director_facebook_likes + gross + num_voted_users + facenumber_in_poster + num_user_for_reviews + country + movie_facebook_likes, data=moviesTrain)
 summary(glm.fit2)
+plot(glm.fit2)
 glm.fit3 = lm(imdb_score~num_critic_for_reviews + director_facebook_likes + gross + num_voted_users + facenumber_in_poster + num_user_for_reviews + movie_facebook_likes, data=moviesTrain)
 summary(glm.fit3)
+plot(glm.fit3)
 glm.fit4 = lm(imdb_score~num_critic_for_reviews + director_facebook_likes + gross + num_voted_users + facenumber_in_poster + num_user_for_reviews, data=moviesTrain)
 summary(glm.fit4)
+plot(glm.fit4)
 glm.fit5 = lm(imdb_score~num_critic_for_reviews + movie_facebook_likes*director_facebook_likes + gross + num_voted_users + facenumber_in_poster + num_user_for_reviews, data=moviesTrain)
 summary(glm.fit5)
+plot(glm.fit5)
 
 # Running the best fitted models (Multiple Linear Regression statistical learning method) on test data set; We found glm.fit4 and glm.fit5 models are better ones which can be predicted on Test Data set
 
@@ -106,9 +111,10 @@ mean(glm.prob5 != moviesTest$imdb_rating)
 attach(moviesTrain)
 lda.fit4 = lda(imdb_rating~num_critic_for_reviews + director_facebook_likes + gross + num_voted_users + facenumber_in_poster + num_user_for_reviews, data=moviesTrain)
 lda.fit4
+plot(lda.fit4)
 lda.fit5 = lda(imdb_rating~num_critic_for_reviews + movie_facebook_likes*director_facebook_likes + gross + num_voted_users + facenumber_in_poster + num_user_for_reviews, data=moviesTrain)
 lda.fit5
-
+plot(lda.fit5)
 # Use the above fitted LDA model on test data set
 
 lda.predict4 = predict(lda.fit4, moviesTest)
