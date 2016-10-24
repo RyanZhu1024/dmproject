@@ -12,7 +12,7 @@ attach(movies)
 totalrows = dim(movies)[1]
 imdb_rating = rep("bad", totalrows)
 
-# Classificying the predictor based on imdb_score: 
+# Classifying the predictor based on imdb_score: 
 # If less than 6 then classifying it as bad movie
 # If between 6 and 8 then classifying it as average movie
 # If between 8 and 9 then classifying it as good movie
@@ -74,16 +74,41 @@ summary(glm.fit4)
 glm.fit5 = lm(imdb_score~num_critic_for_reviews + movie_facebook_likes*director_facebook_likes + gross + num_voted_users + facenumber_in_poster + num_user_for_reviews, data=moviesTrain)
 summary(glm.fit5)
 
+# Having cross validation on the above predicted Linear Regression models having high R square
+
+glm.fit3CV = glm(imdb_score~num_critic_for_reviews + director_facebook_likes + gross + num_voted_users + facenumber_in_poster + num_user_for_reviews + movie_facebook_likes, data=moviesTrain)
+glm.fit4CV = glm(imdb_score~num_critic_for_reviews + director_facebook_likes + gross + num_voted_users + facenumber_in_poster + num_user_for_reviews, data=moviesTrain)
+glm.fit5CV = glm(imdb_score~num_critic_for_reviews + movie_facebook_likes*director_facebook_likes + gross + num_voted_users + facenumber_in_poster + num_user_for_reviews, data=moviesTrain)
+cv.glm(moviesTrain, glm.fit3CV)$delta[1]
+cv.glm(moviesTrain, glm.fit4CV)$delta[1]
+cv.glm(moviesTrain, glm.fit5CV)$delta[1]
+cv.glm(moviesTrain, glm.fit3CV, K=5)$delta[1]
+cv.glm(moviesTrain, glm.fit4CV, K=5)$delta[1]
+cv.glm(moviesTrain, glm.fit5CV, K=5)$delta[1]
+cv.glm(moviesTrain, glm.fit3CV, K=10)$delta[1]
+cv.glm(moviesTrain, glm.fit4CV, K=10)$delta[1]
+cv.glm(moviesTrain, glm.fit5CV, K=10)$delta[1]
+
 # Running the best fitted models (Multiple Linear Regression statistical learning method) on test data set; We found glm.fit4 and glm.fit5 models are better ones which can be predicted on Test Data set
 
+glm.predict3conf = confint(glm.fit3)
+glm.predict3conf
 glm.predict4conf = confint(glm.fit4)
 glm.predict4conf
 glm.predict5conf = confint(glm.fit5)
 glm.predict5conf
+glm.predict3 = predict(glm.fit3, moviesTest)
+summary(glm.predict3)
 glm.predict4 = predict(glm.fit4, moviesTest)
 summary(glm.predict4)
 glm.predict5 = predict(glm.fit5, moviesTest)
 summary(glm.predict5)
+glm.prob3 = rep("bad", nrow(moviesTest))
+glm.prob3[(predict(glm.fit3) < 6)] = "bad"
+glm.prob3[(predict(glm.fit3) >= 6) & (predict(glm.fit3) < 8)] = "average"
+glm.prob3[(predict(glm.fit3) >= 8) & (predict(glm.fit3) < 9)] = "good"
+glm.prob3[(predict(glm.fit3) >= 9)] = "best"
+mean(glm.prob4 != moviesTest$imdb_rating)
 glm.prob4 = rep("bad", nrow(moviesTest))
 glm.prob4[(predict(glm.fit4) < 6)] = "bad"
 glm.prob4[(predict(glm.fit4) >= 6) & (predict(glm.fit4) < 8)] = "average"
@@ -104,6 +129,8 @@ mean(glm.prob5 != moviesTest$imdb_rating)
 # Using the LDA model now with only those predictors which are highly associated with the target variable; We are using the predictors of glm.fit4 and glm.fit5 models from the earlier stage
 
 attach(moviesTrain)
+lda.fit3 = lda(imdb_rating~num_critic_for_reviews + director_facebook_likes + gross + num_voted_users + facenumber_in_poster + num_user_for_reviews + movie_facebook_likes, data=moviesTrain)
+lda.fit3
 lda.fit4 = lda(imdb_rating~num_critic_for_reviews + director_facebook_likes + gross + num_voted_users + facenumber_in_poster + num_user_for_reviews, data=moviesTrain)
 lda.fit4
 lda.fit5 = lda(imdb_rating~num_critic_for_reviews + movie_facebook_likes*director_facebook_likes + gross + num_voted_users + facenumber_in_poster + num_user_for_reviews, data=moviesTrain)
@@ -111,6 +138,9 @@ lda.fit5
 
 # Use the above fitted LDA model on test data set
 
+lda.predict3 = predict(lda.fit3, moviesTest)
+table(lda.predict3$class, moviesTest$imdb_rating)
+mean(lda.predict3$class != moviesTest$imdb_rating)
 lda.predict4 = predict(lda.fit4, moviesTest)
 table(lda.predict4$class, moviesTest$imdb_rating)
 mean(lda.predict4$class != moviesTest$imdb_rating)
@@ -121,7 +151,14 @@ mean(lda.predict5$class != moviesTest$imdb_rating)
 # We can clearly see from LDA models that model 4 which we have used in Multiple Linear Regression model performed well on testing data set as it provided 27% test error rate while model 5 provided 28% test error rate
 
 # Using the KNN model now with only those predictors which are highly associated with the target variable; We are using the predictors of glm.fit4 and glm.fit5 models from the very earlier stage
-predictors=cbind(num_critic_for_reviews,director_facebook_likes,gross,num_voted_users,facenumber_in_poster,num_user_for_reviews)
-knn.pred1 = knn(predictors[train,],predictors[!train,],imdb_rating[train],k=10)
+
+set.seed(1)
+attach(moviesdataset)
+knntrain = moviesdataset[train, ]
+knntest = moviesdataset[!train, ]
+predictors.train = cbind(num_critic_for_reviews,director_facebook_likes,gross,num_voted_users,facenumber_in_poster,num_user_for_reviews)[train, ]
+predictors.test = cbind(num_critic_for_reviews,director_facebook_likes,gross,num_voted_users,facenumber_in_poster,num_user_for_reviews)[!train, ]
+p = knntrain$imdb_rating
+knn.pred1 = knn(knntrain,knntest,p,k=10)
 table(knn.pred1,imdb_rating[!train])
 mean(knn.pred1==imdb_rating[!train])
