@@ -136,6 +136,7 @@ mean(glm.prob5 != moviesTest$imdb_rating)
 attach(moviesTrain)
 lda.fit3 = lda(imdb_rating~num_critic_for_reviews + director_facebook_likes + gross + num_voted_users + facenumber_in_poster + num_user_for_reviews + movie_facebook_likes, data=moviesTrain)
 lda.fit3
+plot(lda.fit3)
 lda.fit4 = lda(imdb_rating~num_critic_for_reviews + director_facebook_likes + gross + num_voted_users + facenumber_in_poster + num_user_for_reviews, data=moviesTrain)
 lda.fit4
 plot(lda.fit4)
