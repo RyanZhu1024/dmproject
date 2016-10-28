@@ -34,9 +34,9 @@ summary(moviesdataset)
 percent70data = round(0.70*totalrows)
 percent30data = totalrows - percent70data
 train = 1:percent70data
-test = -train
+test = percent70data+1:totalrows
 moviesTrain = moviesdataset[train, ]
-moviesTest = moviesdataset[!train, ]
+moviesTest = moviesdataset[test, ]
 dim(moviesTrain)
 dim(moviesTest)
 
