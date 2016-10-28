@@ -36,7 +36,7 @@ percent30data = totalrows - percent70data
 train = 1:percent70data
 test = -train
 moviesTrain = moviesdataset[train, ]
-moviesTest = moviesdataset[-train, ]
+moviesTest = moviesdataset[!train, ]
 dim(moviesTrain)
 dim(moviesTest)
 
@@ -161,11 +161,10 @@ mean(lda.predict5$class != moviesTest$imdb_rating)
 
 set.seed(1)
 attach(moviesdataset)
-knntrain = moviesdataset[train, ]
-knntest = moviesdataset[!train, ]
-predictors.train = cbind(num_critic_for_reviews,director_facebook_likes,gross,num_voted_users,facenumber_in_poster,num_user_for_reviews)[train, ]
-predictors.test = cbind(num_critic_for_reviews,director_facebook_likes,gross,num_voted_users,facenumber_in_poster,num_user_for_reviews)[!train, ]
-p = knntrain$imdb_rating
-knn.pred1 = knn(knntrain,knntest,p,k=10)
+knntrain = as.matrix(moviesdataset[train, ])
+knntest = as.matrix(moviesdataset[!train, ])
+predictors = cbind(num_critic_for_reviews,director_facebook_likes,gross,num_voted_users,facenumber_in_poster,num_user_for_reviews)
+p = imdb_rating[train]
+knn.pred1 = knn(predictors[train,],predictors[!train,],p,k=10)
 table(knn.pred1,imdb_rating[!train])
 mean(knn.pred1==imdb_rating[!train])
