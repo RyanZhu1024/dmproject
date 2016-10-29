@@ -6,6 +6,7 @@ require(ISLR)
 library(class)
 require(class)
 require(boot)
+require(tree)
 movies = read.csv("./movies.csv", na.strings = "?")
 movies = na.omit(movies)
 attach(movies)
@@ -113,7 +114,7 @@ glm.prob3[(predict(glm.fit3) < 6)] = "bad"
 glm.prob3[(predict(glm.fit3) >= 6) & (predict(glm.fit3) < 8)] = "average"
 glm.prob3[(predict(glm.fit3) >= 8) & (predict(glm.fit3) < 9)] = "good"
 glm.prob3[(predict(glm.fit3) >= 9)] = "best"
-mean(glm.prob4 != moviesTest$imdb_rating)
+mean(glm.prob3 != moviesTest$imdb_rating)
 glm.prob4 = rep("bad", nrow(moviesTest))
 glm.prob4[(predict(glm.fit4) < 6)] = "bad"
 glm.prob4[(predict(glm.fit4) >= 6) & (predict(glm.fit4) < 8)] = "average"
@@ -165,6 +166,51 @@ knntrain = as.matrix(moviesdataset[train, ])
 knntest = as.matrix(moviesdataset[test, ])
 predictors = cbind(num_critic_for_reviews,director_facebook_likes,gross,num_voted_users,facenumber_in_poster,num_user_for_reviews)
 p = imdb_rating[train]
+knn.pred1 = knn(predictors[train,],predictors[test,],p,k=5)
+table(knn.pred1,imdb_rating[test])
+mean(knn.pred1!=imdb_rating[test])
 knn.pred1 = knn(predictors[train,],predictors[test,],p,k=10)
 table(knn.pred1,imdb_rating[test])
-mean(knn.pred1==imdb_rating[test])
+mean(knn.pred1!=imdb_rating[test])
+knn.pred1 = knn(predictors[train,],predictors[test,],p,k=15)
+table(knn.pred1,imdb_rating[test])
+mean(knn.pred1!=imdb_rating[test])
+knn.pred1 = knn(predictors[train,],predictors[test,],p,k=20)
+table(knn.pred1,imdb_rating[test])
+mean(knn.pred1!=imdb_rating[test])
+predictors = cbind(num_critic_for_reviews,movie_facebook_likes,director_facebook_likes,gross,num_voted_users,facenumber_in_poster,num_user_for_reviews)
+p = imdb_rating[train]
+knn.pred1 = knn(predictors[train,],predictors[test,],p,k=5)
+table(knn.pred1,imdb_rating[test])
+mean(knn.pred1!=imdb_rating[test])
+knn.pred1 = knn(predictors[train,],predictors[test,],p,k=10)
+table(knn.pred1,imdb_rating[test])
+mean(knn.pred1!=imdb_rating[test])
+knn.pred1 = knn(predictors[train,],predictors[test,],p,k=15)
+table(knn.pred1,imdb_rating[test])
+mean(knn.pred1!=imdb_rating[test])
+knn.pred1 = knn(predictors[train,],predictors[test,],p,k=20)
+table(knn.pred1,imdb_rating[test])
+mean(knn.pred1!=imdb_rating[test])
+
+# K=20 performs better result on both the models which provides lower test error rate
+
+# Using Tree model now on the above data set
+
+set.seed(1)
+tree.movies=tree(imdb_rating~num_critic_for_reviews + director_facebook_likes + gross + num_voted_users + facenumber_in_poster + num_user_for_reviews, moviesdataset[train,])
+plot(tree.movies);text(tree.movies,pretty=0)
+tree.pred=predict(tree.movies,moviesdataset[-train,],type="class")
+with(moviesdataset[-train,],table(tree.pred,imdb_rating))
+(501+3+35+1+42+10)/1140
+# Very high error rate from the tree model
+# Trying to use cross validation to get the best sequence of subtrees and then pruning the tree to fit on the best subtree 
+cv.movies=cv.tree(tree.movies,FUN=prune.misclass)
+cv.movies
+plot(cv.movies)
+prune.movies=prune.misclass(tree.movies,best=4) 
+#Even tried with 5 and 6 as suggested by cv.movies but results are same
+plot(prune.movies);text(prune.movies,pretty=0)
+summary(prune.movies)
+tree.pred=predict(prune.movies,moviesdataset[-train,],type="class")
+with(moviesdataset[-train,],table(tree.pred,imdb_rating))
