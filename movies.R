@@ -283,3 +283,38 @@ boost.moviesTest = moviesdataset[-train,"imdb_score"]
 mean((yhat.boost - boost.moviesTest)^2)
 
 # High MSE obtained of around 0.786 in Boosting; See if we can make it lower
+
+
+set.seed(1)
+attach(moviesdataset)
+knntrain = as.matrix(moviesdataset[train, ])
+knntest = as.matrix(moviesdataset[test, ])
+predictors = cbind(num_critic_for_reviews,director_facebook_likes,num_critic_for_reviews * director_facebook_likes,gross,num_voted_users,facenumber_in_poster,num_user_for_reviews, num_voted_users * num_user_for_reviews)
+p = imdb_rating[train]
+knn.pred1 = knn(predictors[train,],predictors[test,],p,k=5)
+table(knn.pred1,imdb_rating[test])
+mean(knn.pred1!=imdb_rating[test])
+knn.pred1 = knn(predictors[train,],predictors[test,],p,k=10)
+table(knn.pred1,imdb_rating[test])
+mean(knn.pred1!=imdb_rating[test])
+knn.pred1 = knn(predictors[train,],predictors[test,],p,k=15)
+table(knn.pred1,imdb_rating[test])
+mean(knn.pred1!=imdb_rating[test])
+knn.pred1 = knn(predictors[train,],predictors[test,],p,k=20)
+table(knn.pred1,imdb_rating[test])
+mean(knn.pred1!=imdb_rating[test])
+predictors = cbind(num_critic_for_reviews,movie_facebook_likes,director_facebook_likes,gross,num_voted_users,facenumber_in_poster,num_user_for_reviews)
+p = imdb_rating[train]
+knn.pred1 = knn(predictors[train,],predictors[test,],p,k=5)
+table(knn.pred1,imdb_rating[test])
+mean(knn.pred1!=imdb_rating[test])
+knn.pred1 = knn(predictors[train,],predictors[test,],p,k=10)
+table(knn.pred1,imdb_rating[test])
+mean(knn.pred1!=imdb_rating[test])
+knn.pred1 = knn(predictors[train,],predictors[test,],p,k=15)
+table(knn.pred1,imdb_rating[test])
+mean(knn.pred1!=imdb_rating[test])
+knn.pred1 = knn(predictors[train,],predictors[test,],p,k=20)
+table(knn.pred1,imdb_rating[test])
+mean(knn.pred1!=imdb_rating[test])
+# with combinations added, k = 15 is the best with error rate being 33.33%
