@@ -16,18 +16,16 @@ imdb_rating = rep("bad", totalrows)
 # Classifying the predictor based on imdb_score: 
 # If less than 6 then classifying it as bad movie
 # If between 6 and 8 then classifying it as average movie
-# If between 8 and 9 then classifying it as good movie
-# If greater than 9 then classifyng it as best movie
+# If between 8 and 10 then classifying it as good movie
 
 imdb_rating[imdb_score<6] = "bad"
 imdb_rating[(imdb_score>=6) & (imdb_score<8)] = "average"
-imdb_rating[(imdb_score>=8) & (imdb_score<9)] = "good"
-imdb_rating[imdb_score>=9] = "best"
+imdb_rating[(imdb_score>=8)] = "good"
 
 # Making a new data set for movie
 
 moviesdataset = data.frame(movies, imdb_rating)
-fix(moviesdataset)
+#fix(moviesdataset)
 summary(moviesdataset)
 
 # Sampling the data set into 70:30 ratio for Training and Testing purpose
@@ -114,23 +112,20 @@ summary(glm.predict5)
 glm.prob3 = rep("bad", nrow(moviesTest))
 glm.prob3[(predict(glm.fit3) < 6)] = "bad"
 glm.prob3[(predict(glm.fit3) >= 6) & (predict(glm.fit3) < 8)] = "average"
-glm.prob3[(predict(glm.fit3) >= 8) & (predict(glm.fit3) < 9)] = "good"
-glm.prob3[(predict(glm.fit3) >= 9)] = "best"
+glm.prob3[(predict(glm.fit3) >= 8)] = "good"
 mean(glm.prob3 != moviesTest$imdb_rating)
 glm.prob4 = rep("bad", nrow(moviesTest))
 glm.prob4[(predict(glm.fit4) < 6)] = "bad"
 glm.prob4[(predict(glm.fit4) >= 6) & (predict(glm.fit4) < 8)] = "average"
-glm.prob4[(predict(glm.fit4) >= 8) & (predict(glm.fit4) < 9)] = "good"
-glm.prob4[(predict(glm.fit4) >= 9)] = "best"
+glm.prob4[(predict(glm.fit4) >= 8)] = "good"
 mean(glm.prob4 != moviesTest$imdb_rating)
 glm.prob5 = rep("bad", nrow(moviesTest))
 glm.prob5[(predict(glm.fit5) < 6)] = "bad"
 glm.prob5[(predict(glm.fit5) >= 6) & (predict(glm.fit5) < 8)] = "average"
-glm.prob5[(predict(glm.fit5) >= 8) & (predict(glm.fit5) < 9)] = "good"
-glm.prob5[(predict(glm.fit5) >= 9)] = "best"
+glm.prob5[(predict(glm.fit5) >= 8)] = "good"
 mean(glm.prob5 != moviesTest$imdb_rating)
 
-# As of now, model 4 (glm.fit4) from Multiple Linear Regression makes more fit on testing data with 38.78% test error rate while model 5 (glm.fit5) makes more than 40% test error rate
+# As of now, model 4 (glm.fit4) from Multiple Linear Regression makes more fit on testing data with 38.74% test error rate while model 5 (glm.fit5) makes more than 40.77% test error rate
 # Adjusted R square value for model 4 was little low than model 5; RSS was high for model 4 compared to model 5
 
 # We are not using the Logistic Regression models as we are classifying our target based on 4 levels [bad, average, good and best]
@@ -158,7 +153,7 @@ lda.predict5 = predict(lda.fit5, moviesTest)
 table(lda.predict5$class, moviesTest$imdb_rating)
 mean(lda.predict5$class != moviesTest$imdb_rating)
 
-# We can clearly see from LDA models that model 4 which we have used in Multiple Linear Regression model performed well on testing data set as it provided 27% test error rate while model 5 provided 28% test error rate
+# We can clearly see from LDA models that model 4 which we have used in Multiple Linear Regression model performed well on testing data set as it provided 27.9% test error rate while model 5 provided 28% test error rate
 
 # Using the KNN model now with only those predictors which are highly associated with the target variable; We are using the predictors of glm.fit4 and glm.fit5 models from the very earlier stage
 
@@ -195,7 +190,7 @@ knn.pred1 = knn(predictors[train,],predictors[test,],p,k=20)
 table(knn.pred1,imdb_rating[test])
 mean(knn.pred1!=imdb_rating[test])
 
-# K=20 performs better result on both the models which provides lower test error rate
+# K=20 performs better result on both the models which provides lower test error rate, 34.21%
 
 # Using Single Decision Tree model now on the above data set
 
@@ -246,7 +241,7 @@ plot(x,y,xlab="All Single Tree Models", ylab="Accuracy",main="Comparing Accuracy
 
 library(randomForest)
 set.seed(1)
-fix(moviesdataset)
+#fix(moviesdataset)
 randomForest.movies=randomForest(imdb_rating~.-country-director_name-color-actor_2_name-genres-actor_1_name-movie_title-actor_3_name-plot_keywords-movie_imdb_link-language-content_rating-imdb_rating-imdb_score,data=moviesdataset,subset=train,mtry=6,importance=TRUE)
 yhat.rf=predict(randomForest.movies, newdata=moviesdataset[-train ,])
 movies.test=moviesdataset[-train ,"imdb_rating"]
@@ -280,7 +275,7 @@ plot(boost.movies ,i="budget")
 plot(boost.movies ,i="num_user_for_reviews")
 yhat.boost=predict(boost.movies ,newdata=moviesdataset[-train ,], n.trees=5000)
 boost.moviesTest = moviesdataset[-train,"imdb_score"]
-mean((yhat.boost - boost.moviesTest)^2)
+1 - mean((yhat.boost - boost.moviesTest)^2)
 
 # High MSE obtained of around 0.786 in Boosting; See if we can make it lower
 
@@ -317,4 +312,5 @@ mean(knn.pred1!=imdb_rating[test])
 knn.pred1 = knn(predictors[train,],predictors[test,],p,k=20)
 table(knn.pred1,imdb_rating[test])
 mean(knn.pred1!=imdb_rating[test])
-# with combinations added, k = 15 is the best with error rate being 33.33%
+# with combinations added, prediction1 is the best with error rate being 33.33%
+
