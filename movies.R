@@ -272,14 +272,15 @@ plot(x,y,xlab="mtry in Random Forest", ylab="Accuracy", main="Accuracy in Random
 
 library(gbm)
 set.seed(1)
-boost.movies=gbm(imdb_score~.-country-director_name-color-actor_2_name-genres-actor_1_name-movie_title-actor_3_name-plot_keywords-movie_imdb_link-language-content_rating-imdb_rating-imdb_score,data=moviesdataset[train ,], distribution="gaussian", n.trees=5000, interaction.depth=4, verbose=F)
+boost.movies=gbm(imdb_rating~.-country-director_name-color-actor_2_name-genres-actor_1_name-movie_title-actor_3_name-plot_keywords-movie_imdb_link-language-content_rating-imdb_rating-imdb_score,data=moviesdataset[train ,], distribution="gaussian", n.trees=5000, interaction.depth=4, verbose=F)
 summary(boost.movies)
+names(boost.movies)
 plot(boost.movies ,i="num_voted_users")
 plot(boost.movies ,i="duration")
 plot(boost.movies ,i="budget")
 plot(boost.movies ,i="num_user_for_reviews")
 yhat.boost=predict(boost.movies ,newdata=moviesdataset[-train ,], n.trees=5000)
-boost.moviesTest = moviesdataset[-train,"imdb_score"]
-mean((yhat.boost - boost.moviesTest)^2)
+boost.moviesTest = moviesdataset[-train,"imdb_rating"]
+mean(yhat.rf==movies.test)
 
-# High MSE obtained of around 0.786 in Boosting; See if we can make it lower
+# Accuracy of around 0.705 is achieved in Boosting
