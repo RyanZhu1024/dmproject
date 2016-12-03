@@ -280,13 +280,20 @@ plot(x,y,xlab="mtry in Random Forest", ylab="Accuracy", main="Accuracy in Random
 
 library(gbm)
 set.seed(1)
-boost.movies=gbm(imdb_score~.-country-director_name-color-actor_2_name-genres-actor_1_name-movie_title-actor_3_name-plot_keywords-movie_imdb_link-language-content_rating-imdb_rating-imdb_score,data=moviesdataset[train ,], distribution="gaussian", n.trees=5000, interaction.depth=4, verbose=F)
+boost.movies=gbm(imdb_rating~.-country-director_name-color-actor_2_name-genres-actor_1_name-movie_title-actor_3_name-plot_keywords-movie_imdb_link-language-content_rating-imdb_rating-imdb_score,data=moviesdataset[train ,], distribution="gaussian", n.trees=5000, interaction.depth=4, verbose=F)
 summary(boost.movies)
+names(boost.movies)
 plot(boost.movies ,i="num_voted_users")
 plot(boost.movies ,i="duration")
 plot(boost.movies ,i="budget")
 plot(boost.movies ,i="num_user_for_reviews")
 yhat.boost=predict(boost.movies ,newdata=moviesdataset[-train ,], n.trees=5000)
+<<<<<<< HEAD
+boost.moviesTest = moviesdataset[-train,"imdb_rating"]
+mean(yhat.rf==movies.test)
+
+# Accuracy of around 0.705 is achieved in Boosting
+=======
 boost.moviesTest = moviesdataset[-train,"imdb_score"]
 1 - mean((yhat.boost - boost.moviesTest)^2)
 
@@ -327,3 +334,4 @@ table(knn.pred1,imdb_rating[test])
 mean(knn.pred1!=imdb_rating[test])
 # with combinations added, prediction1 is the best with error rate being 33.33%
 
+>>>>>>> 5abb18f40b6037c9b985c63aefc4e1b18623b718
