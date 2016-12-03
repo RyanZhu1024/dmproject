@@ -30,12 +30,25 @@ summary(moviesdataset)
 
 # Sampling the data set into 70:30 ratio for Training and Testing purpose
 
+# make oversample dataset
+averages = subset(moviesdataset, imdb_rating == 'average')
+bads = subset(moviesdataset, imdb_rating = 'bad')
+goods = subset(moviesdataset, imdb_rating = 'good')
+oversampled_goods = goods[sample(nrow(goods), 2000, replace = TRUE),  ]
+oversampled_bads = bads[sample(nrow(bads), 2000, replace = TRUE), ]
+goods_and_bads_dataset = merge(oversampled_goods, oversampled_bads, all.x = TRUE, all.y = TRUE)
+final_dataset = merge (goods_and_bads_dataset, averages, all.X = TRUE, all.y = TRUE)
+dim(final_dataset)
+
 percent70data = round(0.70*totalrows)
 percent30data = totalrows - percent70data
 train = 1:percent70data
 test = (percent70data+1):totalrows
 moviesTrain = moviesdataset[train, ]
 moviesTest = moviesdataset[test, ]
+# over sample datasets
+moviesTrain = final_dataset[train, ]
+moviesTest = final_dataset[test, ]
 dim(moviesTrain)
 dim(moviesTest)
 
