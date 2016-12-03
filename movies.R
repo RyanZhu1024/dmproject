@@ -1,5 +1,8 @@
 # Loading the sufficient dataset and removing the NA values
 
+library(randomForest)
+library(gbm)
+library(e1071)
 library(MASS)
 library(ISLR)
 require(ISLR)
@@ -26,19 +29,10 @@ imdb_rating[(imdb_score>=8)] = "good"
 
 moviesdataset = data.frame(movies, imdb_rating)
 #fix(moviesdataset)
+hist(imdb_score, col=5, breaks =15)
 summary(moviesdataset)
-
+summary(moviesdataset$imdb_rating)
 # Sampling the data set into 70:30 ratio for Training and Testing purpose
-
-# make oversample dataset
-averages = subset(moviesdataset, imdb_rating == 'average')
-bads = subset(moviesdataset, imdb_rating = 'bad')
-goods = subset(moviesdataset, imdb_rating = 'good')
-oversampled_goods = goods[sample(nrow(goods), 2000, replace = TRUE),  ]
-oversampled_bads = bads[sample(nrow(bads), 2000, replace = TRUE), ]
-goods_and_bads_dataset = merge(oversampled_goods, oversampled_bads, all.x = TRUE, all.y = TRUE)
-final_dataset = merge (goods_and_bads_dataset, averages, all.X = TRUE, all.y = TRUE)
-dim(final_dataset)
 
 percent70data = round(0.70*totalrows)
 percent30data = totalrows - percent70data
@@ -46,15 +40,13 @@ train = 1:percent70data
 test = (percent70data+1):totalrows
 moviesTrain = moviesdataset[train, ]
 moviesTest = moviesdataset[test, ]
-# over sample datasets
-moviesTrain = final_dataset[train, ]
-moviesTest = final_dataset[test, ]
 dim(moviesTrain)
 dim(moviesTest)
 
 # Plots with all predictors
 
 attach(moviesdataset)
+skewness(imdb_score)
 pairs(~imdb_score+num_critic_for_reviews+director_facebook_likes+gross+num_voted_users)
 pairs(~imdb_score+facenumber_in_poster+num_user_for_reviews+movie_facebook_likes)
 plot(imdb_score, num_critic_for_reviews)
@@ -95,6 +87,7 @@ plot(glm.fit5)
 
 # Having cross validation on the above predicted Linear Regression models having high R square
 
+par(mfrow=c(1,1))
 glm.fit3CV = glm(imdb_score~num_critic_for_reviews + director_facebook_likes + gross + num_voted_users + facenumber_in_poster + num_user_for_reviews + movie_facebook_likes, data=moviesTrain)
 glm.fit4CV = glm(imdb_score~num_critic_for_reviews + director_facebook_likes + gross + num_voted_users + facenumber_in_poster + num_user_for_reviews, data=moviesTrain)
 glm.fit5CV = glm(imdb_score~num_critic_for_reviews + movie_facebook_likes*director_facebook_likes + gross + num_voted_users + facenumber_in_poster + num_user_for_reviews, data=moviesTrain)
@@ -213,7 +206,8 @@ tree.movies=tree(imdb_rating~.-country-director_name-color-actor_2_name-genres-a
 plot(tree.movies);text(tree.movies,pretty=0)
 tree.pred=predict(tree.movies,moviesdataset[-train,],type="class")
 with(moviesdataset[-train,],table(tree.pred,imdb_rating))
-(293+3+111+1+49)/1140
+summary(tree.movies)
+(293+3+111+3+49)/1140
 # Very high error rate from the tree model
 # Trying to use cross validation to get the best sequence of subtrees and then pruning the tree to fit on the best subtree 
 cv.movies=cv.tree(tree.movies,FUN=prune.misclass)
@@ -225,13 +219,14 @@ plot(prune.movies);text(prune.movies,pretty=0)
 summary(prune.movies)
 tree.pred=predict(prune.movies,moviesdataset[-train,],type="class")
 with(moviesdataset[-train,],table(tree.pred,imdb_rating))
+(293+3+111+3+49)/1140
 
 # Plots for Project Progress Report for Accuracy of different models 
-x=c("MultileLM","LDA","KNN (k=20)","Single Decision Tree")
+x=c("MultileLM","LDA","KNN (k=20)","SDT", "Random Forest")
 x=as.factor(x)
-y=c(0.62, 0.72, 0.67, 0.49)
+y=c(0.62, 0.72, 0.67, 0.60, 0.72)
 plot(x,y,xlab="Models Introduced", ylab="Accuracy",main="Accuracy versus Models")
-
+# legend(4.5,0.71, c("SDT is Single Decision Tree"))
 
 x=c(5,10,15,20)
 y=c(0.62, 0.63, 0.66, 0.67)
@@ -252,7 +247,6 @@ plot(x,y,xlab="All Single Tree Models", ylab="Accuracy",main="Comparing Accuracy
 
 # Trying Random Forest Approach on 14 predictors
 
-library(randomForest)
 set.seed(1)
 #fix(moviesdataset)
 randomForest.movies=randomForest(imdb_rating~.-country-director_name-color-actor_2_name-genres-actor_1_name-movie_title-actor_3_name-plot_keywords-movie_imdb_link-language-content_rating-imdb_rating-imdb_score,data=moviesdataset,subset=train,mtry=6,importance=TRUE)
@@ -264,6 +258,7 @@ importance(randomForest.movies)
 randomForest.movies=randomForest(imdb_rating~.-country-director_name-color-actor_2_name-genres-actor_1_name-movie_title-actor_3_name-plot_keywords-movie_imdb_link-language-content_rating-imdb_rating-imdb_score,data=moviesdataset,subset=train,mtry=7,importance=TRUE)
 yhat.rf=predict(randomForest.movies, newdata=moviesdataset[-train ,])
 movies.test=moviesdataset[-train ,"imdb_rating"]
+table(yhat.rf,movies.test)
 mean(yhat.rf==movies.test)
 importance(randomForest.movies)
 randomForest.movies=randomForest(imdb_rating~.-country-director_name-color-actor_2_name-genres-actor_1_name-movie_title-actor_3_name-plot_keywords-movie_imdb_link-language-content_rating-imdb_rating-imdb_score,data=moviesdataset,subset=train,mtry=5,importance=TRUE)
@@ -273,14 +268,13 @@ mean(yhat.rf==movies.test)
 importance(randomForest.movies)
 
 x=c(5,6,7)
-y=c(0.70,0.73,0.72)
+y=c(0.7113,0.7194,0.7201)
 plot(x,y,xlab="mtry in Random Forest", ylab="Accuracy", main="Accuracy in Random Forest models for different mtry", col="blue", type="b")
 
 # Trying the Boosting Approach
 
-library(gbm)
 set.seed(1)
-boost.movies=gbm(imdb_rating~.-country-director_name-color-actor_2_name-genres-actor_1_name-movie_title-actor_3_name-plot_keywords-movie_imdb_link-language-content_rating-imdb_rating-imdb_score,data=moviesdataset[train ,], distribution="gaussian", n.trees=5000, interaction.depth=4, verbose=F)
+boost.movies=gbm(imdb_score~.-country-director_name-color-actor_2_name-genres-actor_1_name-movie_title-actor_3_name-plot_keywords-movie_imdb_link-language-content_rating-imdb_rating-imdb_score,data=moviesdataset[train ,], distribution="gaussian", n.trees=5000, interaction.depth=4, verbose=F)
 summary(boost.movies)
 names(boost.movies)
 plot(boost.movies ,i="num_voted_users")
@@ -288,17 +282,10 @@ plot(boost.movies ,i="duration")
 plot(boost.movies ,i="budget")
 plot(boost.movies ,i="num_user_for_reviews")
 yhat.boost=predict(boost.movies ,newdata=moviesdataset[-train ,], n.trees=5000)
-<<<<<<< HEAD
-boost.moviesTest = moviesdataset[-train,"imdb_rating"]
-mean(yhat.rf==movies.test)
-
-# Accuracy of around 0.705 is achieved in Boosting
-=======
 boost.moviesTest = moviesdataset[-train,"imdb_score"]
-1 - mean((yhat.boost - boost.moviesTest)^2)
+mean((yhat.boost - boost.moviesTest)^2)
 
 # High MSE obtained of around 0.786 in Boosting; See if we can make it lower
-
 
 set.seed(1)
 attach(moviesdataset)
@@ -334,4 +321,125 @@ table(knn.pred1,imdb_rating[test])
 mean(knn.pred1!=imdb_rating[test])
 # with combinations added, prediction1 is the best with error rate being 33.33%
 
->>>>>>> 5abb18f40b6037c9b985c63aefc4e1b18623b718
+
+# Oversampled data set Prediction
+
+movies = read.csv("./movies.csv", na.strings = "?")
+movies = na.omit(movies)
+attach(movies)
+totalrows = dim(movies)[1]
+
+# Classifying the predictor based on imdb_score: 
+# If less than 6 then classifying it as bad movie
+# If between 6 and 8 then classifying it as average movie
+# If between 8 and 10 then classifying it as good movie
+
+imdb_rating = rep("bad", totalrows)
+imdb_rating[imdb_score<6] = "bad"
+imdb_rating[(imdb_score>=6) & (imdb_score<8)] = "average"
+imdb_rating[(imdb_score>=8)] = "good"
+moviesdataset = data.frame(movies, imdb_rating)
+
+# Sampling the data set into 70:30 ratio for Training and Testing purpose
+averages = subset(moviesdataset, imdb_rating == 'average')
+dim(averages)
+bads = subset(moviesdataset, imdb_rating == 'bad')
+dim(bads)
+goods = subset(moviesdataset, imdb_rating == 'good')
+dim(goods)
+oversampled_goods = goods[sample(nrow(goods), 2000, replace = TRUE),  ]
+oversampled_bads = bads[sample(nrow(bads), 2000, replace = TRUE), ]
+dim(oversampled_bads)
+dim(oversampled_goods)
+goods_and_bads_dataset = merge(oversampled_goods, oversampled_bads, all.x = TRUE, all.y = TRUE)
+dim(goods_and_bads_dataset)
+final_dataset = merge (goods_and_bads_dataset, averages, all.x  = TRUE, all.y = TRUE)
+dim(final_dataset)
+totalrows = dim(final_dataset)[1]
+attach(final_dataset)
+percent70data = round(0.70*totalrows)
+percent30data = totalrows - percent70data
+train = 1:percent70data
+test = (percent70data+1):totalrows
+moviesTrain = final_dataset[train, ]
+moviesTest = final_dataset[test, ]
+dim(moviesTrain)
+dim(moviesTest)
+hist(imdb_score, col=5, breaks =15)
+summary(final_dataset)
+summary(final_dataset$imdb_rating)
+
+# We are trying with Multiple Linear Regression Model
+set.seed(1)
+glm.fit6 = lm(imdb_score~num_critic_for_reviews + gross + num_voted_users + facenumber_in_poster + num_user_for_reviews + movie_facebook_likes, data=moviesTrain)
+summary(glm.fit6)
+glm.predict6 = predict(glm.fit6, moviesTest)
+summary(glm.predict6)
+glm.prob6 = rep("bad", nrow(moviesTest))
+glm.prob6[(glm.predict6 < 6)] = "bad"
+glm.prob6[(glm.predict6 >= 6) & (glm.predict6 < 8)] = "average"
+glm.prob6[(glm.predict6 >= 8)] = "good"
+mean(glm.prob6 != moviesTest$imdb_rating)
+
+# Using the LDA model now with only those predictors which are highly associated with the target variable;
+lda.fit6 = lda(imdb_rating~num_critic_for_reviews + gross + num_voted_users + facenumber_in_poster + num_user_for_reviews + movie_facebook_likes, data=moviesTrain)
+lda.fit6
+plot(lda.fit6)
+lda.predict6 = predict(lda.fit6, moviesTest)
+table(lda.predict6$class, moviesTest$imdb_rating)
+mean(lda.predict6$class != moviesTest$imdb_rating)
+
+# Using Single Decision Trees
+set.seed(1)
+tree.movies=tree(imdb_rating~.-country-director_name-color-actor_2_name-genres-actor_1_name-movie_title-actor_3_name-plot_keywords-movie_imdb_link-language-content_rating-imdb_rating-imdb_score, final_dataset[train,])
+plot(tree.movies);text(tree.movies,pretty=0)
+tree.pred=predict(tree.movies,final_dataset[-train,],type="class")
+with(final_dataset[-train,],table(tree.pred,imdb_rating))
+(165+114+224+7+107)/1959
+cv.movies=cv.tree(tree.movies,FUN=prune.misclass)
+cv.movies
+plot(cv.movies)
+prune.movies=prune.misclass(tree.movies,best=12) 
+plot(prune.movies);text(prune.movies,pretty=0)
+summary(prune.movies)
+tree.pred=predict(prune.movies,final_dataset[-train,],type="class")
+with(final_dataset[-train,],table(tree.pred,imdb_rating))
+
+# Trying Random Forest Approach on 14 predictors
+set.seed(1)
+randomForest.movies=randomForest(imdb_rating~.-country-director_name-color-actor_2_name-genres-actor_1_name-movie_title-actor_3_name-plot_keywords-movie_imdb_link-language-content_rating-imdb_rating-imdb_score,data=final_dataset,subset=train,mtry=6,importance=TRUE)
+yhat.rf=predict(randomForest.movies, newdata=final_dataset[-train ,])
+movies.test=final_dataset[-train ,"imdb_rating"]
+table(yhat.rf,movies.test)
+mean(yhat.rf==movies.test)
+importance(randomForest.movies)
+randomForest.movies=randomForest(imdb_rating~.-country-director_name-color-actor_2_name-genres-actor_1_name-movie_title-actor_3_name-plot_keywords-movie_imdb_link-language-content_rating-imdb_rating-imdb_score,data=final_dataset,subset=train,mtry=7,importance=TRUE)
+yhat.rf=predict(randomForest.movies, newdata=final_dataset[-train ,])
+movies.test=final_dataset[-train ,"imdb_rating"]
+mean(yhat.rf==movies.test)
+table(yhat.rf,movies.test)
+importance(randomForest.movies)
+randomForest.movies=randomForest(imdb_rating~.-country-director_name-color-actor_2_name-genres-actor_1_name-movie_title-actor_3_name-plot_keywords-movie_imdb_link-language-content_rating-imdb_rating-imdb_score,data=final_dataset,subset=train,mtry=5,importance=TRUE)
+yhat.rf=predict(randomForest.movies, newdata=final_dataset[-train ,])
+movies.test=final_dataset[-train ,"imdb_rating"]
+mean(yhat.rf==movies.test)
+importance(randomForest.movies)
+x=c(5,6,7)
+y=c(0.6513,0.6564,0.6569)
+plot(x,y,xlab="mtry in Random Forest", ylab="Accuracy", main="Accuracy in Random Forest models for different mtry", col="blue", type="b")
+
+# Trying the Boosting Approach
+set.seed(1)
+boost.movies=gbm(imdb_score~.-country-director_name-color-actor_2_name-genres-actor_1_name-movie_title-actor_3_name-plot_keywords-movie_imdb_link-language-content_rating-imdb_rating-imdb_score,data=final_dataset[train ,], distribution="gaussian", n.trees=5000, interaction.depth=4, verbose=F)
+summary(boost.movies)
+names(boost.movies)
+plot(boost.movies ,i="num_voted_users")
+plot(boost.movies ,i="duration")
+plot(boost.movies ,i="budget")
+plot(boost.movies ,i="num_user_for_reviews")
+yhat.boost=predict(boost.movies ,newdata=final_dataset[-train ,], n.trees=5000)
+boost.moviesTest = final_dataset[-train,"imdb_score"]
+mean((yhat.boost - boost.moviesTest)^2)
+
+attach(final_dataset)
+skewness(imdb_score)
